@@ -51,7 +51,14 @@ move_response* client::move(move_request* req) {
 }
 
 challenge_response* client::challenge(move_request* req) {
-    return new challenge_response(false);
+	if(req->state->your_tricks>=3)
+	{
+		return new challenge_response(true);
+	}
+	else
+	{
+		return new challenge_response(false);
+	}
 }
 
 void client::server_greeting(greeting* greet) {
