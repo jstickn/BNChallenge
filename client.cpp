@@ -14,6 +14,13 @@ void client::error(error_msg* err) {
 }
 
 move_response* client::move(move_request* req) {
+	//Issue Challenge
+	if(req->state->can_challenge && !req->state->in_challenge)
+	{ //If able to issue challenge and not in challenge
+		if(req->state->their_points == 9 || req->state->your_tricks>=3) return new offer_challenge();
+	}
+
+	//Play Card
 	if(req->state->opp_lead == true)
 	{ //opponent lead
 		bool card_found = false;
@@ -51,7 +58,7 @@ move_response* client::move(move_request* req) {
 }
 
 challenge_response* client::challenge(move_request* req) {
-	if(req->state->your_tricks>=3)
+	if(req->state->your_tricks>=3 || req->state->their_points == 9)
 	{
 		return new challenge_response(true);
 	}
