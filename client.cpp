@@ -26,14 +26,15 @@ move_response* client::move(move_request* req) {
 		for (int i = 0; i < req->state->hand.size(); i++){
 			this->hand_avg += req->state->hand[i];
 		}
-		hand_avg /= req->state->hand.size();
+		hand_avg /= (double)req->state->hand.size();
 	}
 
 	//Issue Challenge
 	if(req->state->can_challenge && !req->state->in_challenge)
 	{ //If able to issue challenge and not in challenge
 		if(req->state->their_points == 9 || req->state->your_tricks>=3 || (req->state->your_tricks >=2 && (req->state->your_tricks+req->state->their_tricks != req->state->total_tricks ))) return new offer_challenge();
-		if (hand_avg >= 10 && req->state->your_tricks >= req->state->their_tricks) return new offer_challenge();
+		if (req->state->your_tricks==2 && req->state->hand[0] == 13) return new offer_challenge();
+		if (hand_avg >= 11.5 && req->state->hand.size() > 1 && req->state->your_tricks >= req->state->their_tricks) return new offer_challenge();
 	}
 
 	//Play Card
@@ -69,12 +70,12 @@ move_response* client::move(move_request* req) {
 	else
 	{ //player lead
 		this->need_card = true;
-		return new play_card_response(req->state->hand[0]);
+		return new play_card_response(req->state->hand[req->state->hand.size() - 1]);
 	}    
 }
 
 challenge_response* client::challenge(move_request* req) {
-	if(req->state->your_tricks>=3 || req->state->their_points == 9|| req->state->your_tricks > req->state->their_tricks )
+	if(req->state->your_tricks>=3 || req->state->their_points == 9|| (req->state->your_tricks==2 && req->state->hand[0] == 13) || (hand_avg >= 11 && req->state->hand.size() > 1 && req->state->your_tricks >= req->state->their_tricks))
 	{
 		return new challenge_response(true);
 	}
