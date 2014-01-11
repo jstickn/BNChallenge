@@ -19,13 +19,21 @@ move_response* client::move(move_request* req) {
 			this->hand_sum += req->state->hand[i]; //purposely leave out lowest 
 		}
 		this->first_of_hand = false;
-		if (this->hand_sum > this->heuristic+this->confidence) return new offer_challenge();
+		if(req->state->can_challenge && !req->state->in_challenge)
+			if (this->hand_sum > this->heuristic+this->confidence) return new offer_challenge();
+	}
+	else {
+		for (int i = 0; i < req->state->hand.size(); i++){
+			this->hand_avg += req->state->hand[i];
+		}
+		hand_avg /= req->state->hand.size();
 	}
 
 	//Issue Challenge
 	if(req->state->can_challenge && !req->state->in_challenge)
 	{ //If able to issue challenge and not in challenge
 		if(req->state->their_points == 9 || req->state->your_tricks>=3 || (req->state->your_tricks >=2 && (req->state->your_tricks+req->state->their_tricks != req->state->total_tricks ))) return new offer_challenge();
+		if (hand_avg >= 10 && req->state->your_tricks >= req->state->their_tricks) return new offer_challenge();
 	}
 
 	//Play Card
@@ -50,14 +58,9 @@ move_response* client::move(move_request* req) {
 		
 		if(card_found == false)
 		{ //If no card is found, throw away the lowest value card
-			for(int i=req->state->hand.size()-1; i>=0; i--)
-			{ //Iterate through hand to find lowest card that beats opponent lead
-				if(req->state->hand[i] < current_selected_val)
-				{
-					current_selected_val = req->state->hand[i];
-					current_selected_index = i;
-				}
-			}
+			if (req->state->hand[0] == req->state->card)
+				current_selected_index = 0;
+			else current_selected_index = req->state->hand.size() - 1;
 		}
 		this->heuristic += (7-req->state->hand[current_selected_index])/104.0;
 		return new play_card_response(req->state->hand[current_selected_index]);
@@ -71,7 +74,7 @@ move_response* client::move(move_request* req) {
 }
 
 challenge_response* client::challenge(move_request* req) {
-	if(req->state->your_tricks>=3 || req->state->their_points == 9|| req->state->your_tricks > req->state->their_tricks || this->hand_sum > this->confidence + heuristic)
+	if(req->state->your_tricks>=3 || req->state->their_points == 9|| req->state->your_tricks > req->state->their_tricks )
 	{
 		return new challenge_response(true);
 	}
@@ -92,6 +95,7 @@ void client::game_over(game_result* r) {
 void client::trick_done(move_result* r) {
     if (this->need_card)
 		this->heuristic += (7 - r->card)/104.0;
+	this->hand_avg = 0;
 }
 
 void client::hand_done(move_result* r) {
@@ -100,6 +104,7 @@ void client::hand_done(move_result* r) {
 	if (this->hand_count >= 10) this->hand_count = 0;
 	this->heuristic = 35;
 	this->hand_sum = 0;
+	this->hand_avg = 0;
 	this->first_of_hand = true;
 }
 
@@ -118,7 +123,8 @@ int main(void) {
             client myclient = client();
 			myclient.heuristic = 35;
 			myclient.hand_count = 0;
-			myclient.confidence = 10;
+			myclient.confidence = 5;
+			myclient.hand_avg = 0;
 
             game_mediator game = game_mediator(&myclient, &contest_server);
             game.start();

@@ -29,6 +29,7 @@ class client : public game_player {
 		bool first_of_hand;
 		double hand_sum;
 		double confidence;
+		double hand_avg;
     private:
         default_random_engine random_generator;
         uniform_int_distribution<int> random_challenge;
