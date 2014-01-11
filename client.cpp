@@ -75,14 +75,35 @@ move_response* client::move(move_request* req) {
 }
 
 challenge_response* client::challenge(move_request* req) {
-	if(req->state->your_tricks>=3 || req->state->their_points == 9|| (req->state->your_tricks==2 && req->state->hand[0] == 13) || (hand_avg >= 11 && req->state->hand.size() > 1 && req->state->your_tricks >= req->state->their_tricks))
+	int trickdifference = req->state->your_tricks - req->state->their_tricks;
+	if(req->state->your_tricks>=3 || req->state->their_points == 9 || (req->state->your_tricks==2 && req->state->hand[0] == 13)
+		|| (trickdifference==-1 && hand_avg >=11 && req->state->hand.size()==4) || (trickdifference==-1 && hand_avg >=11 && (req->state->hand.size()==2 || req->state->hand.size()==3 )))
+	if(req->state->hand.size() == 5)
 	{
-		return new challenge_response(true);
+		if(hand_avg>=11.5) return new challenge_response(true);
+		else return new challenge_response(false);
 	}
-	else
+	else if(req->state->hand.size() == 4)
 	{
-		return new challenge_response(false);
+		if(hand_avg>=10.5) return new challenge_response(true);
+		else return new challenge_response(false);
 	}
+	else if(req->state->hand.size() == 3)
+	{
+		if(hand_avg>=10) return new challenge_response(true);
+		else return new challenge_response(false);
+	}
+	else if(req->state->hand.size() == 2)
+	{
+		if(hand_avg>=11) return new challenge_response(true);
+		else return new challenge_response(false);
+	}
+	else if(req->state->hand.size() == 1)
+	{
+		if(hand_avg>=11) return new challenge_response(true);
+		else return new challenge_response(false);
+	}
+	return new challenge_response(false);
 }
 
 void client::server_greeting(greeting* greet) {
